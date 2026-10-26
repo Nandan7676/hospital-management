@@ -1,0 +1,12 @@
+package com.meddibuddy.doctor.service;
+import com.meddibuddy.doctor.*;import org.springframework.http.HttpStatus;import org.springframework.stereotype.Service;import org.springframework.web.server.ResponseStatusException;import java.util.List;
+@Service public class DoctorService {
+ public record DoctorRequest(String name,String specialty,String experience,int fee,String location,String image,String about){}
+ private final DoctorRepository repo;public DoctorService(DoctorRepository repo){this.repo=repo;}
+ public List<DoctorDto> search(String query,String specialty){return repo.findAll().stream().filter(d->specialty==null||specialty.isBlank()||d.getSpecialty().equalsIgnoreCase(specialty)).filter(d->query==null||query.isBlank()||(d.getName()+" "+d.getSpecialty()+" "+d.getLocation()).toLowerCase().contains(query.toLowerCase())).map(Doctor::toDto).toList();}
+ public DoctorDto get(Long id){return repo.findById(id).map(Doctor::toDto).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Doctor not found"));}
+ public DoctorDto create(DoctorRequest r){if(r.name()==null||r.name().isBlank()||r.specialty()==null||r.specialty().isBlank()||r.fee()<0)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Name, specialty and a valid fee are required");Doctor d=new Doctor(r.name().trim(),r.specialty().trim(),safe(r.experience(),"Experienced specialist"),r.fee(),"New",0,safe(r.location(),"Location not provided"),safe(r.image(),"photo-1559839734-2b71ea197ec2"),safe(r.about(),"Dedicated to providing thoughtful, patient-first care."));return repo.save(d).toDto();}
+ public DoctorDto update(Long id,DoctorRequest r){Doctor d=repo.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Doctor not found"));if(r.name()==null||r.name().isBlank()||r.specialty()==null||r.specialty().isBlank()||r.fee()<0)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Name, specialty and a valid fee are required");d.setName(r.name().trim());d.setSpecialty(r.specialty().trim());d.setExperience(safe(r.experience(),d.getExperience()));d.setFee(r.fee());d.setLocation(safe(r.location(),d.getLocation()));d.setImage(safe(r.image(),d.getImage()));d.setAbout(safe(r.about(),d.getAbout()));return repo.save(d).toDto();}
+ public void delete(Long id){if(!repo.existsById(id))throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Doctor not found");repo.deleteById(id);}public long count(){return repo.count();}
+ private String safe(String v,String fallback){return v==null||v.isBlank()?fallback:v.trim();}
+}

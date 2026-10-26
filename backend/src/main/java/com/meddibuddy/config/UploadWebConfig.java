@@ -1,0 +1,3 @@
+package com.meddibuddy.config;
+import org.springframework.beans.factory.annotation.Value;import org.springframework.context.annotation.Configuration;import org.springframework.web.servlet.config.annotation.*;import java.nio.file.*;
+@Configuration public class UploadWebConfig implements WebMvcConfigurer {private final String uploadDirectory;public UploadWebConfig(@Value("${app.upload-dir:uploads}") String dir){uploadDirectory=Paths.get(dir).toAbsolutePath().normalize().toUri().toString();}@Override public void addResourceHandlers(ResourceHandlerRegistry registry){String location=uploadDirectory.endsWith("/")?uploadDirectory:uploadDirectory+"/";registry.addResourceHandler("/uploads/**").addResourceLocations(location);}}
